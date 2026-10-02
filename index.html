@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heil- und Kurwälder – Interaktive Karte</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  .wald-karte-wrap{font-family:"Segoe UI",system-ui,sans-serif; background:#f4f1ea;}
+  .wald-karte-wrap header{padding:20px 24px;}
+  .wald-karte-wrap header h1{color:#1b4332; font-size:1.5rem; margin:0;}
+  .wald-karte-wrap header p{color:#555; font-size:.95rem; margin-top:4px;}
+  #filter{display:flex; flex-wrap:wrap; gap:8px; padding:0 24px 14px;}
+  .chip{border:1.5px solid #2d6a4f; color:#2d6a4f; background:#fff;
+        border-radius:999px; padding:5px 14px; font-size:.85rem; cursor:pointer;
+        transition:all .15s;}
+  .chip:hover{background:#74c69d; border-color:#74c69d;}
+  .chip.aktiv{background:#2d6a4f; color:#fff;}
+  #karte{height:70vh; width:100%; border-top:3px solid #2d6a4f; border-bottom:3px solid #2d6a4f;
+         background:linear-gradient(180deg,#cfe3d0,#e8f0e9);}
+  .baum-marker{position:relative;}
+  .baum-marker .stamm{position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+    width:6px; height:12px; background:#6b4226; border-radius:2px;}
+  .baum-marker .krone{position:absolute; left:50%; bottom:10px;
+    width:30px; height:30px; background:#2d6a4f; border:3px solid #fff; border-radius:50% 50% 50% 0;
+    transform:translateX(-50%) rotate(-45deg); box-shadow:0 2px 6px rgba(0,0,0,.35);}
+  .wald-popup .leaflet-popup-content-wrapper{
+    border-radius:16px; padding:0; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.25);}
+  .wald-popup .leaflet-popup-content{margin:0; width:290px !important; line-height:1.4;}
+  .wald-popup .leaflet-popup-tip{box-shadow:none;}
+  .popup-kopf{background:linear-gradient(135deg,#1b4332,#2d6a4f);
+    color:#fff; padding:14px 16px; position:relative;}
+  .popup-kopf .typ{font-size:.68rem; letter-spacing:.12em; text-transform:uppercase;
+    color:#74c69d; font-weight:700;}
+  .popup-kopf h2{font-size:1.15rem; margin-top:2px; padding-right:18px;}
+  .popup-kopf .ort{font-size:.82rem; opacity:.85; margin-top:2px;}
+  .popup-body{padding:12px 16px 16px; font-size:.85rem; color:#333;}
+  .popup-body .beschreibung{margin-bottom:10px;}
+  .fakten{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .fakt{background:#e8f0e9; border-radius:8px; padding:5px 10px; font-size:.78rem;}
+  .fakt b{display:block; color:#1b4332; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em;}
+  .badges{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;}
+  .badge{background:#fff; border:1px solid #74c69d; color:#1b4332;
+    border-radius:999px; padding:2px 9px; font-size:.7rem;}
+  .merkmale{list-style:none; margin:0 0 12px; padding:0;}
+  .merkmale li{padding:2px 0 2px 18px; position:relative; font-size:.8rem;}
+  .merkmale li::before{content:"\1F343"; position:absolute; left:0; font-size:.7rem;}
+  .popup-btn{display:block; text-align:center; background:#2d6a4f; color:#fff !important;
+    text-decoration:none; border-radius:10px; padding:9px; font-weight:600; font-size:.85rem;
+    transition:background .15s;}
+  .popup-btn:hover{background:#1b4332;}
+  .wald-popup .leaflet-popup-close-button{top:10px !important; right:10px !important; color:#fff !important;}
+</style>
+</head>
+<body>
+<div class="wald-karte-wrap">
+<header>
+  <h1>Unsere Heil- und Kurwälder</h1>
+  <p>Klicken Sie auf einen Baum, um mehr zu erfahren.</p>
+</header>
+<div id="filter">
+  <button class="chip aktiv" data-kat="alle">Alle Wälder</button>
+  <button class="chip" data-kat="atemwege">Atemwege</button>
+  <button class="chip" data-kat="herz">Herz &amp; Kreislauf</button>
+  <button class="chip" data-kat="ortho">Orthopädie</button>
+  <button class="chip" data-kat="psycho">Psychosomatik</button>
+  <button class="chip" data-kat="neuro">Neurologie</button>
+  <button class="chip" data-kat="onko">Onkologie</button>
+</div>
+<div id="karte"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ================= Daten ================= */
+const waelder = [
+  { name:"Kur- und Heilwald Heringsdorf", typ:"Kur- und Heilwald", ort:"Heringsdorf, Usedom",
+    lat:53.956, lon:14.168, groesse:"Erster Kur- und Heilwald Deutschlands", eroeffnet:"seit 2019",
+    kat:["atemwege","herz","psycho"],
+    beschreibung:"Der erste Kur- und Heilwald Deutschlands – eingebettet in die Küstenlandschaft Usedoms.",
+    merkmale:["Motorikpfad","Heilwaldplatz Meditative Bewegung","Platz der Stille und Ruhe","Thingstätte & Bismarckwarte"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Kinderheilwald Heringsdorf", typ:"Kinderheilwald", ort:"Heringsdorf, Usedom",
+    lat:53.958, lon:14.160, groesse:"Kinderheilwald", eroeffnet:"20.09.2021",
+    kat:["psycho","neuro"],
+    beschreibung:"Speziell für Kinder gestaltet: spielerisch die Sinne schärfen und die Natur erleben.",
+    merkmale:["Willkommenszone","Sinneswald","Schaukelnest & Klangbaum","Wald-Barfußweg"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Kurwald Wustrow", typ:"Kurwald", ort:"Ostseebad Wustrow, Fischland",
+    lat:54.348, lon:12.398, groesse:"zwischen Parkstraße und Strandstraße", eroeffnet:"ausgewiesener Kurwald",
+    kat:["atemwege","herz","ortho"],
+    beschreibung:"Direkt zwischen Park und Strand gelegen – frische Seeluft inklusive.",
+    merkmale:["Hinweistafel","Sagenpfad","Fitnesspfad","Spiel- und Sportgeräte"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Kurwald Graal-Müritz", typ:"Kurwald", ort:"Ostseeheilbad Graal-Müritz",
+    lat:54.252, lon:12.243, groesse:"ca. 13 Hektar", eroeffnet:"19.04.2020",
+    kat:["herz","psycho","onko"],
+    beschreibung:"Vierfach ausgezeichneter Kurwald: Klang-, Aktiv- und Entspannungswald in einem.",
+    merkmale:["Klangwald","Grünes Klassenzimmer","Aktivwald","Entspannungswald & Achtsamkeitspfad"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Heilwald Bad Doberan", typ:"Heilwald", ort:"Bad Doberan, Waldgebiet Quellholz-Eikhäge",
+    lat:54.105, lon:11.912, groesse:"ca. 38 Hektar", eroeffnet:"30.07.2025",
+    kat:["ortho","herz","neuro"],
+    beschreibung:"Das jüngste Projekt direkt neben der Reha-Klinik Moorbad – mit küstennahem Sigma-Klima und mäandrierendem Bachlauf.",
+    merkmale:["Kneipp-Anlage","Balancier- und Kletterbereiche","Gang- und Bewegungsparcours","Bronzezeitliche Hügelgräber"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Heilwald Klink", typ:"Heilwald", ort:"Klink am Müritzsee",
+    lat:53.481, lon:12.365, groesse:"Mehrere Themenabschnitte", eroeffnet:"April 2021",
+    kat:["psycho","herz","onko"],
+    beschreibung:"Fünf unterschiedliche Waldabschnitte – von der Bewegung bis zur Besinnung.",
+    merkmale:["Bewegungswald","Begegnungswald","Erlebniswald","Wald der Ruhe & Barfußweg"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Heilwald Plau am See", typ:"Heilwald", ort:"Plau am See, Quetziner Tannen",
+    lat:53.463, lon:12.256, groesse:"Quetziner Wald", eroeffnet:"nahe Reha-Klinik",
+    kat:["ortho","herz","neuro"],
+    beschreibung:"Angrenzend an eine Reha-Klinik mit abgestuften Wegen für jedes Fitnesslevel.",
+    merkmale:["Trainingsgeräte mit Anleitung","Nordic-Walking-Pfad","Naturlehrpfad","Verschiedene Schwierigkeitsgrade"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Kurwald Krakow am See", typ:"Kurwald", ort:"Krakow am See, Landzunge Jörnberg",
+    lat:53.652, lon:12.267, groesse:"18 Hektar", eroeffnet:"29.04.2022",
+    kat:["herz","ortho","psycho"],
+    beschreibung:"Auf der Landzunge zwischen Jörnberg, Emkwerder und Lehmwerder – mit Panorama-Aussicht.",
+    merkmale:["Kneippsche Wasseranlage","Aussichtsplateau Fritz-Reuter-Blick","Himmelssteg","Kletter- und Balancieranlage"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Heilwald Nesselberg", typ:"Heilwald", ort:"Waren (Müritz)",
+    lat:53.517, lon:12.700, groesse:"ca. 3,5 Hektar", eroeffnet:"Heilwald",
+    kat:["neuro","psycho"],
+    beschreibung:"Ein kleiner, feiner Heilwald in der Müritzstadt Waren.",
+    merkmale:["Therapiebegleitende Nutzung","Ruhebereiche"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Kurwald Ecktannen", typ:"Kurwald", ort:"Waren (Müritz)",
+    lat:53.498, lon:12.705, groesse:"ca. 130 Hektar", eroeffnet:"südlich von Waren",
+    kat:["psycho","onko","herz"],
+    beschreibung:"Der flächengrößte Kurwald der Region – Raum für Achtsamkeit und Meditation.",
+    merkmale:["Achtsamkeitstraining","Meditation","Parkmöglichkeiten Fontanestraße"],
+    link:"https://www.kur-und-heilwaelder.de" },
+];
+
+const katNamen = {atemwege:"Atemwege", herz:"Herz & Kreislauf", ortho:"Orthopädie",
+                  psycho:"Psychosomatik", neuro:"Neurologie", onko:"Onkologie"};
+
+/* ================= Karte ================= */
+const karte = L.map("karte",{scrollWheelZoom:true}).setView([53.7,12.8], 8);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  attribution:'&copy; OpenStreetMap', maxZoom:18}).addTo(karte);
+
+const layer = L.layerGroup().addTo(karte);
+let aktiveKat = "alle";
+
+function baumIcon(){
+  return L.divIcon({className:"", html:'<div class="baum-marker"><span class="krone"></span><span class="stamm"></span></div>',
+    iconSize:[30,42], iconAnchor:[15,42], popupAnchor:[0,-40]});
+}
+
+function popupHTML(w){
+  return `
+    <div class="popup-kopf">
+      <div class="typ">${w.typ}</div>
+      <h2>${w.name}</h2>
+      <div class="ort">📍 ${w.ort}</div>
+    </div>
+    <div class="popup-body">
+      <div class="beschreibung">${w.beschreibung}</div>
+      <div class="fakten">
+        <div class="fakt"><b>Auszeichnung</b>${w.eroeffnet}</div>
+        <div class="fakt"><b>Fläche / Lage</b>${w.groesse}</div>
+      </div>
+      <div class="badges">${w.kat.map(k=>`<span class="badge">${katNamen[k]}</span>`).join("")}</div>
+      <ul class="merkmale">${w.merkmale.map(m=>`<li>${m}</li>`).join("")}</ul>
+      <a class="popup-btn" href="${w.link}" target="_blank">Mehr erfahren →</a>
+    </div>`;
+}
+
+function zeichne(){
+  layer.clearLayers();
+  const sichtbar = waelder.filter(w => aktiveKat==="alle" || w.kat.includes(aktiveKat));
+  const grenzen = [];
+  sichtbar.forEach(w=>{
+    const m = L.marker([w.lat,w.lon],{icon:baumIcon()});
+    m.bindPopup(popupHTML(w),{className:"wald-popup", maxWidth:300, minWidth:300});
+    m.addTo(layer);
+    grenzen.push([w.lat,w.lon]);
+  });
+  if(grenzen.length) karte.fitBounds(grenzen,{padding:[40,40]});
+}
+
+document.querySelectorAll(".chip").forEach(chip=>{
+  chip.addEventListener("click",()=>{
+    document.querySelectorAll(".chip").forEach(c=>c.classList.remove("aktiv"));
+    chip.classList.add("aktiv");
+    aktiveKat = chip.dataset.kat;
+    zeichne();
+  });
+});
+
+zeichne();
+</script>
+</body>
+</html>
