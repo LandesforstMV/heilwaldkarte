@@ -43,7 +43,12 @@
     text-decoration:none; border-radius:10px; padding:9px; font-weight:600; font-size:.85rem;
     transition:background .15s;}
   .popup-btn:hover{background:#1b4332;}
-  .wald-popup .leaflet-popup-close-button{top:10px !important; right:10px !important; color:#fff !important;}.leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
+  .wald-popup .leaflet-popup-close-button{top:10px !important; right:10px !important; color:#fff !important;}
+  #typ-filter{display:flex; flex-wrap:wrap; gap:8px; padding:0 24px 8px;}
+  #legende{display:flex; flex-wrap:wrap; gap:16px; padding:0 24px 14px; font-size:.8rem; color:#444; align-items:center;}
+  #legende .punkt{display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:5px; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.3); vertical-align:-1px;}
+  .popup-kopf .recht{font-weight:400; text-transform:none; letter-spacing:0; opacity:.75; font-size:.65rem;}
+.leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
 	-webkit-transition: -webkit-transform 0.3s ease-out, opacity 0.3s ease-in;
 	-moz-transition: -moz-transform 0.3s ease-out, opacity 0.3s ease-in;
 	-o-transition: -o-transform 0.3s ease-out, opacity 0.3s ease-in;
@@ -70,8 +75,8 @@
 <body>
 <div class="wald-karte-wrap">
 <header>
-  <h1>Unsere Heil- und Kurwälder</h1>
-  <p>Klicken Sie auf einen Baum, um mehr zu erfahren.</p>
+  <h1>Heil-, Kur- und Erholungswälder in M-V</h1>
+  <p>16 Ausweisungen nach § 22 Landeswaldgesetz M-V · Klicken Sie auf einen Baum, um mehr zu erfahren.</p>
 </header>
 <div id="filter">
   <button class="chip aktiv" data-kat="alle">Alle Wälder</button>
@@ -82,25 +87,73 @@
   <button class="chip" data-kat="neuro">Neurologie</button>
   <button class="chip" data-kat="onko">Onkologie</button>
 </div>
+
+<div id="typ-filter">
+  <button class="chip aktiv" data-typ="alle">Alle Kategorien</button>
+  <button class="chip" data-typ="Heilwald">Heilwälder</button>
+  <button class="chip" data-typ="Kurwald">Kurwälder</button>
+  <button class="chip" data-typ="Erholungswald">Erholungswälder</button>
+</div>
+
+<div id="legende">
+  <span><i class="punkt" style="background:#2d6a4f"></i>Heilwald</span>
+  <span><i class="punkt" style="background:#74c69d"></i>Kurwald</span>
+  <span><i class="punkt" style="background:#e9c46a"></i>Erholungswald</span>
+  <span><i class="punkt" style="background:#1b4332"></i>Kur- und Heilwald</span>
+</div>
 <div id="karte"></div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 /* ================= Daten ================= */
+const farben = {
+  "Heilwald":       "#2d6a4f",
+  "Kurwald":        "#74c69d",
+  "Erholungswald":  "#e9c46a",
+  "Kur- und Heilwald": "#1b4332"
+};
+
 const waelder = [
+  /* ---- Heilwälder (6 Ausweisungen) ---- */
+  { name:"Heilwald Bad Doberan", typ:"Heilwald", ort:"Bad Doberan, Quellholz-Eikhäge",
+    lat:54.0917, lon:11.9008, groesse:"ca. 38 Hektar", eroeffnet:"30.07.2025",
+    kat:["ortho","herz","neuro"],
+    beschreibung:"Das jüngste Projekt direkt neben der Reha-Klinik Moorbad – mit küstennahem Klima und mäandrierendem Bachlauf.",
+    merkmale:["Kneipp-Anlage","Balancier- und Kletterbereiche","Gang- und Bewegungsparcours","Bronzezeitliche Hügelgräber"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Heilwald Nesselberg", typ:"Heilwald", ort:"Waren (Müritz)",
+    lat:53.5048, lon:12.6941, groesse:"ca. 3,5 Hektar", eroeffnet:"Heilwald",
+    kat:["neuro","psycho"],
+    beschreibung:"Ein kleiner, feiner Heilwald in der Müritzstadt Waren.",
+    merkmale:["Therapiebegleitende Nutzung","Ruhebereiche"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Heilwald Quetziner Tannen", typ:"Heilwald", ort:"Plau am See",
+    lat:53.4806, lon:12.2743, groesse:"Quetziner Wald", eroeffnet:"nahe Reha-Klinik",
+    kat:["ortho","herz","neuro"],
+    beschreibung:"Angrenzend an eine Reha-Klinik mit abgestuften Wegen für jedes Fitnesslevel.",
+    merkmale:["Trainingsgeräte mit Anleitung","Nordic-Walking-Pfad","Naturlehrpfad","Verschiedene Schwierigkeitsgrade"],
+    link:"https://www.kur-und-heilwaelder.de" },
+  { name:"Heilwald der Müritz Klinik Klink", typ:"Heilwald", ort:"Klink am Müritzsee",
+    lat:53.4765, lon:12.3640, groesse:"Mehrere Themenabschnitte", eroeffnet:"April 2021",
+    kat:["psycho","herz","onko"],
+    beschreibung:"Fünf unterschiedliche Waldabschnitte – von der Bewegung bis zur Besinnung.",
+    merkmale:["Bewegungswald","Begegnungswald","Erlebniswald","Wald der Ruhe & Barfußweg"],
+    link:"https://www.kur-und-heilwaelder.de" },
   { name:"Kur- und Heilwald Heringsdorf", typ:"Kur- und Heilwald", ort:"Heringsdorf, Usedom",
     lat:53.9528, lon:14.1598, groesse:"Erster Kur- und Heilwald Deutschlands", eroeffnet:"seit 2019",
     kat:["atemwege","herz","psycho"],
     beschreibung:"Der erste Kur- und Heilwald Deutschlands – eingebettet in die Küstenlandschaft Usedoms.",
     merkmale:["Motorikpfad","Heilwaldplatz Meditative Bewegung","Platz der Stille und Ruhe","Thingstätte & Bismarckwarte"],
     link:"https://www.kur-und-heilwaelder.de" },
-  { name:"Kinderheilwald Heringsdorf", typ:"Kinderheilwald", ort:"Heringsdorf, Usedom",
-    lat:53.9495, lon:14.154, groesse:"Kinderheilwald", eroeffnet:"20.09.2021",
+  { name:"Kinderheilwald Heringsdorf", typ:"Heilwald", ort:"Heringsdorf, Usedom",
+    lat:53.9495, lon:14.1540, groesse:"Kinderheilwald", eroeffnet:"20.09.2021",
     kat:["psycho","neuro"],
     beschreibung:"Speziell für Kinder gestaltet: spielerisch die Sinne schärfen und die Natur erleben.",
     merkmale:["Willkommenszone","Sinneswald","Schaukelnest & Klangbaum","Wald-Barfußweg"],
     link:"https://www.kur-und-heilwaelder.de" },
+
+  /* ---- Kurwälder (5 Ausweisungen) ---- */
   { name:"Kurwald Wustrow", typ:"Kurwald", ort:"Ostseebad Wustrow, Fischland",
     lat:54.3485, lon:12.3947, groesse:"zwischen Parkstraße und Strandstraße", eroeffnet:"ausgewiesener Kurwald",
     kat:["atemwege","herz","ortho"],
@@ -113,35 +166,11 @@ const waelder = [
     beschreibung:"Vierfach ausgezeichneter Kurwald: Klang-, Aktiv- und Entspannungswald in einem.",
     merkmale:["Klangwald","Grünes Klassenzimmer","Aktivwald","Entspannungswald & Achtsamkeitspfad"],
     link:"https://www.kur-und-heilwaelder.de" },
-  { name:"Heilwald Bad Doberan", typ:"Heilwald", ort:"Bad Doberan, Waldgebiet Quellholz-Eikhäge",
-    lat:54.0917, lon:11.9008, groesse:"ca. 38 Hektar", eroeffnet:"30.07.2025",
-    kat:["ortho","herz","neuro"],
-    beschreibung:"Das jüngste Projekt direkt neben der Reha-Klinik Moorbad – mit küstennahem Sigma-Klima und mäandrierendem Bachlauf.",
-    merkmale:["Kneipp-Anlage","Balancier- und Kletterbereiche","Gang- und Bewegungsparcours","Bronzezeitliche Hügelgräber"],
-    link:"https://www.kur-und-heilwaelder.de" },
-  { name:"Heilwald Klink", typ:"Heilwald", ort:"Klink am Müritzsee",
-    lat:53.4765, lon:12.364, groesse:"Mehrere Themenabschnitte", eroeffnet:"April 2021",
-    kat:["psycho","herz","onko"],
-    beschreibung:"Fünf unterschiedliche Waldabschnitte – von der Bewegung bis zur Besinnung.",
-    merkmale:["Bewegungswald","Begegnungswald","Erlebniswald","Wald der Ruhe & Barfußweg"],
-    link:"https://www.kur-und-heilwaelder.de" },
-  { name:"Heilwald Plau am See", typ:"Heilwald", ort:"Plau am See, Quetziner Tannen",
-    lat:53.4806, lon:12.2743, groesse:"Quetziner Wald", eroeffnet:"nahe Reha-Klinik",
-    kat:["ortho","herz","neuro"],
-    beschreibung:"Angrenzend an eine Reha-Klinik mit abgestuften Wegen für jedes Fitnesslevel.",
-    merkmale:["Trainingsgeräte mit Anleitung","Nordic-Walking-Pfad","Naturlehrpfad","Verschiedene Schwierigkeitsgrade"],
-    link:"https://www.kur-und-heilwaelder.de" },
   { name:"Kurwald Krakow am See", typ:"Kurwald", ort:"Krakow am See, Landzunge Jörnberg",
-    lat:53.661, lon:12.2726, groesse:"18 Hektar", eroeffnet:"29.04.2022",
+    lat:53.6610, lon:12.2726, groesse:"18 Hektar", eroeffnet:"29.04.2022",
     kat:["herz","ortho","psycho"],
     beschreibung:"Auf der Landzunge zwischen Jörnberg, Emkwerder und Lehmwerder – mit Panorama-Aussicht.",
     merkmale:["Kneippsche Wasseranlage","Aussichtsplateau Fritz-Reuter-Blick","Himmelssteg","Kletter- und Balancieranlage"],
-    link:"https://www.kur-und-heilwaelder.de" },
-  { name:"Heilwald Nesselberg", typ:"Heilwald", ort:"Waren (Müritz)",
-    lat:53.5048, lon:12.6941, groesse:"ca. 3,5 Hektar", eroeffnet:"Heilwald",
-    kat:["neuro","psycho"],
-    beschreibung:"Ein kleiner, feiner Heilwald in der Müritzstadt Waren.",
-    merkmale:["Therapiebegleitende Nutzung","Ruhebereiche"],
     link:"https://www.kur-und-heilwaelder.de" },
   { name:"Kurwald Ecktannen", typ:"Kurwald", ort:"Waren (Müritz)",
     lat:53.5011, lon:12.6786, groesse:"ca. 130 Hektar", eroeffnet:"südlich von Waren",
@@ -149,6 +178,39 @@ const waelder = [
     beschreibung:"Der flächengrößte Kurwald der Region – Raum für Achtsamkeit und Meditation.",
     merkmale:["Achtsamkeitstraining","Meditation","Parkmöglichkeiten Fontanestraße"],
     link:"https://www.kur-und-heilwaelder.de" },
+  /* Heringsdorf bereits oben als Kur- und Heilwald */
+
+  /* ---- Erholungswälder (5) ---- */
+  { name:"Gespensterwald Nienhagen", typ:"Erholungswald", ort:"Ostseebad Nienhagen",
+    lat:54.1623, lon:11.9382, groesse:"Nienhäger Holz, ca. 180 ha Gesamtfläche", eroeffnet:"seit 1943 Naturschutzgebiet",
+    kat:["atemwege","herz","psycho"],
+    beschreibung:"Weltberühmter Küstenwald mit vom Seewind geformten Buchen direkt an der Steilküste.",
+    merkmale:["Steilküsten-Wanderweg","Windflüchter-Buchen","E9-Wanderweg","Pilz-Skulptur am Eingang"],
+    link:"https://www.wald-mv.de/walderlebnis/ausflugsziele/Gespensterwald-Nienhagen/" },
+  { name:"Darguner Stadtwald", typ:"Erholungswald", ort:"Dargun, Landkreis Mecklenburgische Seenplatte",
+    lat:53.9020, lon:12.8480, groesse:"Stadtwald Dargun", eroeffnet:"ausgewiesener Erholungswald",
+    kat:["herz","psycho","ortho"],
+    beschreibung:"Der Stadtnahe Erholungswald am Rande von Dargun mit Klosterviertel und Schlossruine in Laufnähe.",
+    merkmale:["Naturlehrpfad","Rast- und Ruhezonen","Jogging- und Walkingstrecken"],
+    link:"https://www.wald-mv.de" },
+  { name:"Kur- und Erholungswald Heiligendamm", typ:"Erholungswald", ort:"Ostseebad Heiligendamm",
+    lat:54.1390, lon:11.8470, groesse:"Küstenwald Heiligendamm", eroeffnet:"ältestes deutsches Seebad, 1793",
+    kat:["atemwege","herz","psycho"],
+    beschreibung:"Historischer Küstenwald im ältesten deutschen Seebad – Buchenalleen mit Meeresblick.",
+    merkmale:["Küstenpromenade","Buchenalleen","Aussichtspunkte auf die Ostsee"],
+    link:"https://www.heiligendamm.de" },
+  { name:"Wittenburger Schäferbruch", typ:"Erholungswald", ort:"Wittenburg, Landkreis Ludwigslust-Parchim",
+    lat:53.4950, lon:11.0750, groesse:"zentrumsnahe Lage im Süden Wittenburgs", eroeffnet:"Oktober 2021",
+    kat:["herz","ortho","psycho"],
+    beschreibung:"Der jüngste Erholungswald vor der Seeblick-Ausweisung – stadtnah im Süden Wittenburgs.",
+    merkmale:["Erholungswege","Naturerlebnis","Stadtnah"],
+    link:"https://www.landesrecht-mv.de/bsmv/document/jlr-WittenErholWaldVMVrahmen/part/X" },
+  { name:"Erholungswald Seeblick", typ:"Erholungswald", ort:"Lohmen, Landkreis Rostock",
+    lat:53.7340, lon:12.1570, groesse:"Erholungswald Seeblick", eroeffnet:"14.09.2026",
+    kat:["psycho","neuro","herz"],
+    beschreibung:"Neueste Ausweisung M-Vs – gesichert als Raum für den ersten Kindergesundheitswald Mecklenburg-Vorpommerns.",
+    merkmale:["Erster Kindergesundheitswald M-Vs (in Entwicklung)","Umweltbildung","Kinderfreundliche Aktiv-Erholung"],
+    link:"https://www.regierung-mv.de/Landesregierung/lm/Aktuell/?id=223513&processor=processor.sa.pressemitteilung" },
 ];
 
 const katNamen = {atemwege:"Atemwege", herz:"Herz & Kreislauf", ortho:"Orthopädie",
@@ -169,12 +231,14 @@ const layer = L.markerClusterGroup({
   }
 }).addTo(karte);
 let aktiveKat = "alle";
+let aktiverTyp = "alle";
 
-function baumIcon(){
+function baumIcon(typ){
+  var farbe = farben[typ] || "#2d6a4f";
   var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='30' height='42' viewBox='0 0 30 42'>"
     + "<rect x='12' y='28' width='6' height='14' rx='2' fill='#6b4226'/>"
-    + "<circle cx='15' cy='15' r='13' fill='#2d6a4f' stroke='#ffffff' stroke-width='3'/>"
-    + "<circle cx='11' cy='11' r='4' fill='#74c69d' opacity='.6'/>"
+    + "<circle cx='15' cy='15' r='13' fill='"+farbe+"' stroke='#ffffff' stroke-width='3'/>"
+    + "<circle cx='11' cy='11' r='4' fill='#ffffff' opacity='.35'/>"
     + "</svg>";
   return L.icon({iconUrl:"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg),
     iconSize:[30,42], iconAnchor:[15,42], popupAnchor:[0,-40]});
@@ -183,7 +247,7 @@ function baumIcon(){
 function popupHTML(w){
   return `
     <div class="popup-kopf">
-      <div class="typ">${w.typ}</div>
+      <div class="typ">${w.typ} <span class="recht">nach § 22 Landeswaldgesetz M-V</span></div>
       <h2>${w.name}</h2>
       <div class="ort">📍 ${w.ort}</div>
     </div>
@@ -201,10 +265,12 @@ function popupHTML(w){
 
 function zeichne(){
   layer.clearLayers();
-  const sichtbar = waelder.filter(w => aktiveKat==="alle" || w.kat.includes(aktiveKat));
+  const sichtbar = waelder.filter(w =>
+    (aktiveKat==="alle" || w.kat.includes(aktiveKat)) &&
+    (aktiverTyp==="alle" || w.typ===aktiverTyp || (aktiverTyp==="Heilwald" && w.typ==="Kur- und Heilwald") || (aktiverTyp==="Kurwald" && w.typ==="Kur- und Heilwald")));
   const grenzen = [];
   sichtbar.forEach(w=>{
-    const m = L.marker([w.lat,w.lon],{icon:baumIcon()});
+    const m = L.marker([w.lat,w.lon],{icon:baumIcon(w.typ)});
     m.bindPopup(popupHTML(w),{className:"wald-popup", maxWidth:300, minWidth:300});
     m.addTo(layer);
     grenzen.push([w.lat,w.lon]);
@@ -212,11 +278,20 @@ function zeichne(){
   if(grenzen.length) karte.fitBounds(grenzen,{padding:[40,40]});
 }
 
-document.querySelectorAll(".chip").forEach(chip=>{
+document.querySelectorAll("#filter .chip").forEach(chip=>{
   chip.addEventListener("click",()=>{
-    document.querySelectorAll(".chip").forEach(c=>c.classList.remove("aktiv"));
+    document.querySelectorAll("#filter .chip").forEach(c=>c.classList.remove("aktiv"));
     chip.classList.add("aktiv");
     aktiveKat = chip.dataset.kat;
+    zeichne();
+  });
+});
+
+document.querySelectorAll("#typ-filter .chip").forEach(chip=>{
+  chip.addEventListener("click",()=>{
+    document.querySelectorAll("#typ-filter .chip").forEach(c=>c.classList.remove("aktiv"));
+    chip.classList.add("aktiv");
+    aktiverTyp = chip.dataset.typ;
     zeichne();
   });
 });
