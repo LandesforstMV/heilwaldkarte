@@ -43,7 +43,27 @@
     text-decoration:none; border-radius:10px; padding:9px; font-weight:600; font-size:.85rem;
     transition:background .15s;}
   .popup-btn:hover{background:#1b4332;}
-  .wald-popup .leaflet-popup-close-button{top:10px !important; right:10px !important; color:#fff !important;}
+  .wald-popup .leaflet-popup-close-button{top:10px !important; right:10px !important; color:#fff !important;}.leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
+	-webkit-transition: -webkit-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-moz-transition: -moz-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-o-transition: -o-transform 0.3s ease-out, opacity 0.3s ease-in;
+	transition: transform 0.3s ease-out, opacity 0.3s ease-in;
+}
+
+.leaflet-cluster-spider-leg {
+	/* stroke-dashoffset (duration and function) should match with leaflet-marker-icon transform in order to track it exactly */
+	-webkit-transition: -webkit-stroke-dashoffset 0.3s ease-out, -webkit-stroke-opacity 0.3s ease-in;
+	-moz-transition: -moz-stroke-dashoffset 0.3s ease-out, -moz-stroke-opacity 0.3s ease-in;
+	-o-transition: -o-stroke-dashoffset 0.3s ease-out, -o-stroke-opacity 0.3s ease-in;
+	transition: stroke-dashoffset 0.3s ease-out, stroke-opacity 0.3s ease-in;
+}
+
+  .wald-cluster{background:rgba(45,106,79,.88); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    font-weight:700; font-size:.9rem; border:3px solid #fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.3); width:40px; height:40px; box-sizing:border-box;}
+  .wald-cluster span{margin-top:-2px;}
+
 </style>
 <base target="_blank">
 </head>
@@ -65,6 +85,7 @@
 <div id="karte"></div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 /* ================= Daten ================= */
 const waelder = [
@@ -138,7 +159,15 @@ const karte = L.map("karte",{scrollWheelZoom:true}).setView([53.7,12.8], 8);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
   attribution:'&copy; OpenStreetMap', maxZoom:18}).addTo(karte);
 
-const layer = L.layerGroup().addTo(karte);
+const layer = L.markerClusterGroup({
+  showCoverageOnHover:false,
+  maxClusterRadius:45,
+  spiderfyDistanceMultiplier:1.6,
+  iconCreateFunction:function(cluster){
+    return L.divIcon({html:"<div class='wald-cluster'><span>"+cluster.getChildCount()+"</span></div>",
+      className:"", iconSize:[40,40]});
+  }
+}).addTo(karte);
 let aktiveKat = "alle";
 
 function baumIcon(){
