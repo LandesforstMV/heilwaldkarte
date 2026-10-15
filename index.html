@@ -6,7 +6,9 @@
 <title>Heil- und Kurwälder – Interaktive Karte</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  .wald-karte-wrap{font-family:"Segoe UI",system-ui,sans-serif; background:#f4f1ea;}
+  html,body{height:100%;margin:0;}
+  .wald-karte-wrap{font-family:"Segoe UI",system-ui,sans-serif; background:#f4f1ea;
+    height:100vh; display:flex; flex-direction:column; overflow:hidden;}
   .wald-karte-wrap header{padding:20px 24px;}
   .wald-karte-wrap header h1{color:#1b4332; font-size:1.5rem; margin:0;}
   .wald-karte-wrap header p{color:#555; font-size:.95rem; margin-top:4px;}
@@ -16,7 +18,7 @@
         transition:all .15s;}
   .chip:hover{background:#74c69d; border-color:#74c69d;}
   .chip.aktiv{background:#2d6a4f; color:#fff;}
-  #karte{height:70vh; width:100%; border-top:3px solid #2d6a4f; border-bottom:3px solid #2d6a4f;
+  #karte{flex:1; min-height:0; width:100%; border-top:3px solid #2d6a4f; border-bottom:3px solid #2d6a4f;
          background:linear-gradient(180deg,#cfe3d0,#e8f0e9);}
   .wald-popup .leaflet-popup-content-wrapper{
     border-radius:16px; padding:0; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.25);}
@@ -93,6 +95,7 @@
   <button class="chip" data-typ="Heilwald">Heilwälder</button>
   <button class="chip" data-typ="Kurwald">Kurwälder</button>
   <button class="chip" data-typ="Erholungswald">Erholungswälder</button>
+  <button class="chip" data-typ="Beweg-dich-Route">BeWegDich-Routen</button>
 </div>
 
 <div id="legende">
@@ -100,6 +103,7 @@
   <span><i class="punkt" style="background:#74c69d"></i>Kurwald</span>
   <span><i class="punkt" style="background:#e9c46a"></i>Erholungswald</span>
   <span><i class="punkt" style="background:#1b4332"></i>Kur- und Heilwald</span>
+  <span><i class="punkt" style="background:#e63946"></i>BeWegDich-Route</span>
 </div>
 <div id="karte"></div>
 </div>
@@ -111,7 +115,8 @@ const farben = {
   "Heilwald":       "#2d6a4f",
   "Kurwald":        "#74c69d",
   "Erholungswald":  "#e9c46a",
-  "Kur- und Heilwald": "#1b4332"
+  "Kur- und Heilwald": "#1b4332",
+  "Beweg-dich-Route": "#e63946"
 };
 
 const waelder = [
@@ -211,6 +216,12 @@ const waelder = [
     beschreibung:"Neueste Ausweisung M-Vs – gesichert als Raum für den ersten Kindergesundheitswald Mecklenburg-Vorpommerns.",
     merkmale:["Erster Kindergesundheitswald M-Vs (in Entwicklung)","Umweltbildung","Kinderfreundliche Aktiv-Erholung"],
     link:"https://www.regierung-mv.de/Landesregierung/lm/Aktuell/?id=223513&processor=processor.sa.pressemitteilung" },
+  { name:"Torgelower Gesundheitspfad", typ:"Beweg-dich-Route", ort:"Torgelow, Alte Panzerstraße",
+    lat:53.645, lon:13.985, groesse:"ca. 1000 m Waldrunde", eroeffnet:"18.09.2026",
+    kat:["herz","ortho","psycho"],
+    beschreibung:"Die sechste BeWegDich-Route M-Vs: eigeverantwortlich nutzbarer Gesundheitspfad – initiiert von Kardiologin Dr. Christine Bahr (FoKo) mit der Landesforst.",
+    merkmale:["Torgelower Gesundheitshäuschen mit Fitnessbändern & Übungsheften","10 Übungsstationen mit Tafeln","Bänke für Ruhepausen & Picknick","Pocket-Bewegungspass „Meins – 30 Minuten Gesundheitsformel“"],
+    link:"https://bewegdichroute.de" },
 ];
 
 const katNamen = {atemwege:"Atemwege", herz:"Herz & Kreislauf", ortho:"Orthopädie",
